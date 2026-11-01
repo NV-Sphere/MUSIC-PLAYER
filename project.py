@@ -1,225 +1,121 @@
 # ============================================================
-#  CALM VIBES MUSIC PLAYER (2-in-1: Tkinter GUI + Streamlit Web)
-#  Made by: [Her Name]  |  Python + DSA Mini Project
+#  CALM VIBES MUSIC PLAYER (Tkinter Desktop + Streamlit Web)
+#  Made by: [Her Name]  |  6-Task Python Mini Project
 # ============================================================
+import os, shutil
 
-import os
-
-# Safe Imports: Taaki laptop aur cloud server dono par bina error ke chale
+# ---------- TASK 1: SAFE IMPORTS (Crash-Proof Setup) ----------
 try:
     import tkinter as tk
+    from tkinter import filedialog, simpledialog
     from pygame import mixer
 except Exception:
     tk = None
-    mixer = None
-
 try:
     import streamlit as st
 except Exception:
     st = None
 
+# ---------- TASK 2: SHARED SONG LOGIC (Lists & Strings) ----------
+FAV = "my_voice.mp3"  # Uski khud ki recording ya sabse favourite gaana
 
-# ============================================================
-# TASK 1: COMMON SONG DATABASE (Lists, Tuples & Sets - Day 9, 11, 12)
-# ============================================================
-# Har gaana ek Tuple hai: (file_name, is_favourite)
-my_playlist = [
-    ("MUSIC_1.mp3", False),
-    ("Music_2.mp3", False),
-    ("Music_3.mp3", True),    # <-- Uska FAVOURITE gaana / khud ki recording
-    ("Music_4.mp3", False),
-]
+def get_playlist():
+    # Folder mein jitni bhi .mp3 files hain, unki sorted List banao
+    return sorted([f for f in os.listdir() if f.endswith(".mp3")])
 
-# Set: Already-played gaano ko track karega (duplicates automatically hat jayenge)
-played_songs = set()
+def clean(file_name):
+    # String Methods: ".mp3" aur "_" hata kar sundar naam banao
+    return file_name.replace(".mp3", "").replace("_", " ").title()
 
+# ---------- TASK 3: CALM DARK THEME (Same colors for Both Apps) ----------
+BG, CARD, TEXT = "#1E1B2E", "#2B2640", "#F3E8FF"
+PINK, BLUE, PURPLE = "#FF8FD6", "#8FD9FF", "#C9A0FF"
 
-# ============================================================
-# TASK 2: COMMON HELPER FUNCTION (Strings & Functions - Day 5, 6)
-# ============================================================
-def clean_name(file_name):
-    # String methods: ".mp3" hatao, "_" ko space se badlo, pehla letter capital karo
-    name = file_name.replace(".mp3", "")
-    name = name.replace("_", " ")
-    return name.title()
+# ---------- TASK 4: TKINTER DESKTOP APP (Syllabus GUI + Upload) ----------
+def run_tkinter_app():
+    try: mixer.init()
+    except Exception: pass
 
-
-# ============================================================
-# TASK 3: TKINTER DESKTOP PLAYER (Syllabus GUI Topic)
-# ============================================================
-def run_tkinter_desktop_app():
-    audio_ready = True
-    try:
-        mixer.init()
-    except Exception:
-        audio_ready = False
-
-    def update_status(message, color="#4B0082"):
-        status_label.config(text=message, fg=color)
-
-    def play_music():
-        if not audio_ready:
-            update_status("Is computer ka audio ready nahi hai.")
-            return
-
-        index = playlist_box.curselection()
-        if not index:
-            update_status("Pehle ek gaana select karo!")
-            return
-
-        file_name, is_favourite = my_playlist[index[0]]
-
-        if not os.path.exists(file_name):
-            update_status(file_name + " folder mein nahi mili!")
-            return
-
-        mixer.music.load(file_name)
-        mixer.music.play()
-
-        already_played = file_name in played_songs
-        played_songs.add(file_name)
-
-        if is_favourite:
-            update_status("Playing your FAVOURITE: " + clean_name(file_name) + " 💜", color="#B8005C")
-        elif already_played:
-            update_status("Playing again: " + clean_name(file_name))
-        else:
-            update_status("Playing: " + clean_name(file_name))
-
-    def pause_music():
-        if audio_ready:
-            mixer.music.pause()
-        update_status("Paused.")
-
-    def resume_music():
-        if audio_ready:
-            mixer.music.unpause()
-        update_status("Resumed.")
-
-    def stop_music():
-        if audio_ready:
-            mixer.music.stop()
-        update_status("Stopped.")
-
-    def show_history():
-        if len(played_songs) == 0:
-            update_status("Abhi tak koi gaana play nahi hua.")
-        else:
-            names = [clean_name(s) for s in played_songs]  # List Comprehension
-            update_status("Played so far: " + ", ".join(names))
-
-    # --- Tkinter Window & Theme Setup ---
     window = tk.Tk()
     window.title("Calm Vibes Music Player")
-    window.geometry("380x480")
-    window.configure(bg="#E6E6FA")  # Calm Lavender/Purple
+    window.geometry("360x480")
+    window.configure(bg=BG)
 
-    title_label = tk.Label(window, text="My Calm Vibes Playlist",
-                           bg="#E6E6FA", fg="#4B0082",
-                           font=("Helvetica", 16, "bold"))
-    title_label.pack(pady=15)
+    tk.Label(window, text="🎶 My Calm Vibes Playlist 💜", bg=BG, fg=PURPLE, font=("Helvetica", 15, "bold")).pack(pady=12)
+    box = tk.Listbox(window, bg=CARD, fg=TEXT, font=("Helvetica", 12), selectbackground=BLUE, width=30, height=8, bd=0)
+    box.pack(pady=8)
+    status = tk.Label(window, text="Select a song and press Play", bg=BG, fg=TEXT, font=("Helvetica", 10))
+    status.pack(pady=6)
 
-    # --- Playlist Box (For Loop) ---
-    playlist_box = tk.Listbox(window, bg="#FFD6EC", fg="#333333",
-                              font=("Helvetica", 12), width=32, height=8,
-                              selectbackground="#ADD8E6")
-    playlist_box.pack(pady=10)
+    def refresh():
+        # For Loop se saare gaane screen ke box mein daalo
+        box.delete(0, tk.END)
+        for s in get_playlist():
+            box.insert(tk.END, ("⭐ " if s == FAV else "🎵 ") + clean(s))
 
-    for song_file, favourite in my_playlist:
-        display_name = clean_name(song_file)
-        if favourite:
-            display_name = "⭐ " + display_name
-        playlist_box.insert(tk.END, display_name)
+    def play():
+        if not box.curselection():
+            return status.config(text="Pehle ek gaana select karo!", fg=PINK)
+        song = get_playlist()[box.curselection()[0]]
+        try:
+            mixer.music.load(song)
+            mixer.music.play()
+            status.config(text="Playing: " + clean(song) + " 💜", fg=PINK if song == FAV else BLUE)
+        except Exception:
+            status.config(text="Audio driver issue ya corrupt file!", fg=PINK)
 
-    for i in range(len(my_playlist)):
-        if my_playlist[i][1] is True:
-            playlist_box.itemconfig(i, fg="#B8005C")
+    def add_song():
+        # Laptop se naya MP3 select karke naye naam se project mein save karo
+        path = filedialog.askopenfilename(title="Select MP3", filetypes=[("MP3 Files", "*.mp3")])
+        name = simpledialog.askstring("Song Name", "Is gaane ka kya naam rakhna hai?") if path else None
+        if path and name:
+            new_file = name.strip().replace(" ", "_").lower() + ".mp3"
+            shutil.copy(path, new_file)
+            refresh()
+            status.config(text="Added: " + clean(new_file) + " ✨", fg=PINK)
 
-    # --- Status Label ---
-    status_label = tk.Label(window, text="Select a song and press Play.",
-                            bg="#E6E6FA", fg="#4B0082",
-                            font=("Helvetica", 10), wraplength=320)
-    status_label.pack(pady=10)
+    refresh()
+    row = tk.Frame(window, bg=BG)
+    row.pack(pady=8)
+    tk.Button(row, text="▶ Play", command=play, bg=BLUE, width=6, font=("Arial", 10, "bold")).grid(row=0, column=0, padx=3)
+    tk.Button(row, text="⏸ Pause", command=lambda: mixer.get_init() and mixer.music.pause(), bg=PINK, width=6, font=("Arial", 10, "bold")).grid(row=0, column=1, padx=3)
+    tk.Button(row, text="⏯ Resume", command=lambda: mixer.get_init() and mixer.music.unpause(), bg=BLUE, width=7, font=("Arial", 10, "bold")).grid(row=0, column=2, padx=3)
+    tk.Button(row, text="⏹ Stop", command=lambda: mixer.get_init() and mixer.music.stop(), bg=PURPLE, width=6, font=("Arial", 10, "bold")).grid(row=0, column=3, padx=3)
 
-    # --- Control Buttons ---
-    button_frame = tk.Frame(window, bg="#E6E6FA")
-    button_frame.pack(pady=15)
-
-    tk.Button(button_frame, text="Play", command=play_music,
-              bg="#ADD8E6", font=("Arial", 10, "bold"), width=7).grid(row=0, column=0, padx=4, pady=4)
-    tk.Button(button_frame, text="Pause", command=pause_music,
-              bg="#FFB6C1", font=("Arial", 10, "bold"), width=7).grid(row=0, column=1, padx=4, pady=4)
-    tk.Button(button_frame, text="Resume", command=resume_music,
-              bg="#ADD8E6", font=("Arial", 10, "bold"), width=7).grid(row=1, column=0, padx=4, pady=4)
-    tk.Button(button_frame, text="Stop", command=stop_music,
-              bg="#FFB6C1", font=("Arial", 10, "bold"), width=7).grid(row=1, column=1, padx=4, pady=4)
-
-    tk.Button(window, text="Show Play History", command=show_history,
-              bg="#C9A0FF", font=("Arial", 10, "bold"), width=20).pack(pady=10)
-
-    footer = tk.Label(window, text="Made with Python by [Her Name]",
-                      bg="#E6E6FA", fg="#8A2BE2", font=("Helvetica", 9, "italic"))
-    footer.pack(side="bottom", pady=10)
-
+    tk.Button(window, text="➕ Add & Save New Song", command=add_song, bg=PINK, width=25, font=("Arial", 10, "bold")).pack(pady=8)
+    tk.Label(window, text="Made with Python by [Her Name]", bg=BG, fg=PURPLE, font=("Helvetica", 9, "italic")).pack(side="bottom", pady=8)
     window.mainloop()
 
-
-# ============================================================
-# TASK 4: STREAMLIT WEB PLAYER (Live Mobile Domain Mode)
-# ============================================================
-def run_streamlit_web_app():
-    st.set_page_config(page_title="My Calm Vibes Playlist", page_icon="💜")
-
+# ---------- TASK 5: STREAMLIT WEB APP (Live Domain + Upload) ----------
+def run_streamlit_app():
+    st.set_page_config(page_title="Calm Vibes Playlist", page_icon="💜")
+    st.markdown(f"<style>.stApp{{background:{BG};color:{TEXT};}} h1,h2,h3,p,label{{color:{PURPLE}!important;}}</style>", unsafe_allow_html=True)
     st.title("🎶 My Calm Vibes Playlist 💜")
-    st.write("Built with pure Python (Tkinter + Streamlit) by [Her Name]")
-    st.markdown("---")
+    st.caption("Built with Pure Python (Tkinter + Streamlit) by [Her Name]")
 
-    # Dropdown list taiyar karna (For Loop + Conditionals)
-    display_options = []
-    for song_file, favourite in my_playlist:
-        label = clean_name(song_file)
-        if favourite:
-            label = "⭐ " + label + " (Favourite 💜)"
-        display_options.append(label)
-
-    # Song select karne ka box
-    selected_index = st.selectbox(
-        "Select a song to play:",
-        range(len(display_options)),
-        format_func=lambda i: display_options[i]
-    )
-
-    selected_file, is_fav = my_playlist[selected_index]
-
-    # Audio Player chalana
-    if os.path.exists(selected_file):
-        if is_fav:
-            st.success(f"Playing your FAVOURITE: **{clean_name(selected_file)}** 💜")
-        else:
-            st.info(f"Now Playing: **{clean_name(selected_file)}**")
-
-        with open(selected_file, "rb") as audio_file:
-            st.audio(audio_file.read(), format="audio/mp3")
+    playlist = get_playlist()
+    if playlist:
+        labels = [("⭐ " if s == FAV else "🎵 ") + clean(s) for s in playlist]
+        idx = st.selectbox("Select a song to play:", range(len(playlist)), format_func=lambda i: labels[i])
+        st.success("Now Playing: " + labels[idx])
+        with open(playlist[idx], "rb") as f:
+            st.audio(f.read(), format="audio/mp3")
     else:
-        st.error(f"Song file '{selected_file}' folder mein nahi mili! Please GitHub par upload karein.")
+        st.warning("Abhi koi gaana nahi hai. Niche se apna pehla gaana add karo!")
 
     st.markdown("---")
-    st.caption("Made with Python, Tkinter & Streamlit 💜")
+    st.subheader("➕ Add & Save New Song")
+    up_file = st.file_uploader("Choose an MP3 song or voice recording:", type=["mp3"])
+    up_name = st.text_input("Give this song a name (e.g., My Favourite Song):")
+    if st.button("💾 Save Song to Playlist") and up_file and up_name.strip():
+        new_file = up_name.strip().replace(" ", "_").lower() + ".mp3"
+        with open(new_file, "wb") as f:
+            f.write(up_file.getbuffer())
+        st.success(clean(new_file) + " playlist mein jud gaya! 💜")
+        st.rerun()
 
-
-# ============================================================
-# TASK 5: THE SMART SWITCH (Auto-Detects Laptop vs Web Domain)
-# ============================================================
-def is_running_on_streamlit():
-    try:
-        from streamlit.runtime.scriptrunner import get_script_run_ctx
-        return get_script_run_ctx() is not None
-    except Exception:
-        return False
-
-if is_running_on_streamlit():
-    # Jab Streamlit Cloud (Domain) par chalega, toh Web Player khulega:
-    run_streamlit_web_app()
+# ---------- TASK 6: AUTO-SWITCH (Laptop -> Tkinter, Web -> Streamlit) ----------
+if st and st.runtime.exists():
+    run_streamlit_app()
 else:
-    # Jab VS Code / PyCharm mein Run ▶️ dabayenge, toh Tkinter GUI khulega:
-    run_tkinter_desktop_app()
+    run_tkinter_app()
