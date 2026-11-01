@@ -24,9 +24,9 @@ except Exception:
 # ============================================================
 # Har gaana ek Tuple hai: (file_name, is_favourite)
 my_playlist = [
-    ("tum_hi_ho.mp3", False),
-    ("perfect.mp3", False),
-    ("my_voice.mp3", True),    # <-- Uska FAVOURITE gaana / khud ki recording
+    ("MUSIC_1.mp3", False),
+    ("Music_2.mp3", False),
+    ("Music_3.mp3", True),    # <-- Uska FAVOURITE gaana / khud ki recording
     ("Music_4.mp3", False),
 ]
 
